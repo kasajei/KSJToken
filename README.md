@@ -5,7 +5,7 @@ KSJToken is a [@kasajei](http://twitter.com/kasajei)'s token.
 ## Instrattion
 
 ```
-npm install -g truffle
+npm install -g truffle@4.0.4
 npm install
 ```
 

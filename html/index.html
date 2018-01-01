@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>KSJToken</title>
+</head>
+
+<body>
+  <div id="js-app">
+    <h1>KSJToken Transfer</h1>
+    <p>Your Adress: {{ defaultAccount }}</p>
+    <p>KSJToken: {{ showBalance(balance) }} KSJT</p>
+    <p>
+      To:
+      <br />
+      <input v-model="to" type="text" value="0x97e7320814444f5f5274d78b1ba1e2df5ec8680f" />
+    </p>
+    <p>
+      Amount:
+      <br />
+      <input v-model="amount" type="number" value="1" />
+    </p>
+    <p>
+      <button @click="send">Submit</button>
+    </p>
+    <p v-for="history in histories">
+      Tx:
+      <a :href="'https://ropsten.etherscan.io/tx/' + history">{{ history }}</a>
+    </p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script>
+    window.addEventListener('load', function () {
+      if (typeof web3 !== 'undefined') {
+        window.web3 = new Web3(web3.currentProvider);
+        main()
+      } else {
+        document.write("Please install <a href='https://metamask.io/'>MetaMask</a>.")
+      }
+    })
+    var contractAddress = "0x19dcf42be19806076a9f997708d79cae7c6d7954";
+    var abiArray = [{ "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_spender", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_from", "type": "address" }, { "name": "_to", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "transferFrom", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_spender", "type": "address" }, { "name": "_subtractedValue", "type": "uint256" }], "name": "decreaseApproval", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "balance", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_to", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "_spender", "type": "address" }, { "name": "_addedValue", "type": "uint256" }], "name": "increaseApproval", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }, { "name": "_spender", "type": "address" }], "name": "allowance", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [{ "name": "initialSupply", "type": "uint256" }], "payable": false, "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [{ "indexed": true, "name": "owner", "type": "address" }, { "indexed": true, "name": "spender", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "name": "from", "type": "address" }, { "indexed": true, "name": "to", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Transfer", "type": "event" }];
+
+
+    function main() {
+      var defaultAccount = web3.eth.defaultAccount;
+      var contract = web3.eth.contract(abiArray).at(contractAddress);
+      contract.balanceOf(defaultAccount, function (err, balance) {
+        if (err) throw err;
+        initializeApp(defaultAccount, contract, balance);
+      });
+    }
+
+
+    function initializeApp(defaultAccount, contract, balance) {
+      new Vue({
+        el: '#js-app',
+        data: {
+          defaultAccount: defaultAccount,
+          balance: balance,
+          to: "0x97e7320814444f5f5274d78b1ba1e2df5ec8680f",
+          amount: 1,
+          histories: []
+        },
+        methods: {
+          // This function is not enoght to show token values correctly.
+          showBalance: function (balance) {
+            return (balance / 1e18).toFixed(2);
+          },
+          send: function () {
+            var $this = this;
+            var sendAmount = this.amount * 1e18;
+            contract.transfer(
+              this.to,
+              sendAmount,
+              { from: defaultAccount },
+              function (err, txhash) {
+                if (err) throw err;
+                $this.histories.unshift(txhash);
+                contract.balanceOf(
+                  defaultAccount,
+                  function (err, balance) {
+                    $this.balance = balance;
+                  }
+                );
+              });
+          }
+        }
+      })
+    }
+  </script>
+</body>
+
+</html>
